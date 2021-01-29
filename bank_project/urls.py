@@ -16,10 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
-from api.views import EventViewSet
+from api.views import EventViewSet, BalanceViewSet
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register('event', EventViewSet, basename='event')
+router.register('balance', BalanceViewSet, basename='balance')
 
 
 urlpatterns = [
