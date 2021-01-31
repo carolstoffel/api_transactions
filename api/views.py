@@ -1,7 +1,9 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import viewsets
-from api.serializers import EventSerializer, BalanceSerializer
+from rest_framework import filters
+import django_filters.rest_framework
+from api.serializers import EventSerializer, BalanceSerializer, ResetSerializer
 from api.models import Event, Balance
 from django.http import HttpResponse
 
@@ -83,12 +85,39 @@ class EventViewSet(viewsets.ModelViewSet):
 
 class BalanceViewSet(viewsets.ModelViewSet):
     serializer_class = BalanceSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['account_id']
+
+    def get_queryset(self):
+        queryset = Balance.objects.all()
+        print(queryset, 'queryset')
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        # atrelado ao GET
+        # <rest_framework.request.Request: GET '/balance?account_id=100'> request
+        if request.method == 'GET':
+            info = request.query_params #<QueryDict: {'account_id': ['1230']}>
+            try:
+                account_data = Balance.objects.get(
+                    account_id=info['account_id'])
+                return Response(account_data.balance, status=status.HTTP_200_OK)
+            except:
+                return HttpResponse(0, status=404)
+        return super(BalanceViewSet, self).list(request, *args, **kwargs)
+
+class ResetViewSet(viewsets.ModelViewSet):
+    serializer_class = ResetSerializer
 
     def get_queryset(self):
         queryset = Balance.objects.all()
         return queryset
 
-    def list(self, request, *args, **kwargs):
-        # atrelado ao GET
-        return super(BalanceViewSet, self).list(request, *args, **kwargs)
-        # return Response({'teste': 123})
+    def create(self, request, *args, **kwargs):
+        # atrelado ao POST
+        all_balance = Balance.objects.all()
+        [b.delete() for b in all_balance]
+
+        all_event = Event.objects.all()
+        [e.delete() for e in all_event]
+        return HttpResponse('OK', status=200)

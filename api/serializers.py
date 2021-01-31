@@ -1,5 +1,7 @@
 from rest_framework import serializers
+from rest_framework.response import Response
 from api.models import Event, Balance
+from django.db.models.query import EmptyQuerySet
 
 
 class BalanceSerializer(serializers.ModelSerializer):
@@ -9,8 +11,10 @@ class BalanceSerializer(serializers.ModelSerializer):
 
     def to_representation(self, data):
         data = super(BalanceSerializer, self).to_representation(data)
-        b = float(data['balance'])
-        return b
+
+        # print(data,'data') #OrderedDict([('account_id', '100'), ('balance', 0.0)]) data
+        return data['balance']
+        # return Response({'teste': 123})
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -20,6 +24,7 @@ class EventSerializer(serializers.ModelSerializer):
 
     def to_representation(self, data):
         data = super(EventSerializer, self).to_representation(data)
+
         new_data = {}
         if data['type'] == 'deposit':
             try:
@@ -41,13 +46,16 @@ class EventSerializer(serializers.ModelSerializer):
                 print('BALANCE', data['balance'])
             except:
                 pass
-            new_data[d] = {"id": data["destination"],
-                           "balance": data["balance"]}
+            try:
+                new_data[d] = {"id": data["destination"],
+                               "balance": data["balance"]}
+            except:
+                pass
         elif data['type'] == 'withdraw':
             try:
                 ob = Balance.objects.get(
                     account_id=data['origin'])
-                new_balance = ob.balance
+                new_balance = ob.balance 
                 print('NEW_BALANCE', new_balance)
             except:
                 print('sem obje')
@@ -86,7 +94,7 @@ class EventSerializer(serializers.ModelSerializer):
             del new_data['destination']
             del new_data['origin']
             del new_data['amount']
-            #{"origin": {"id":"100", "balance":0}, "destination": {"id":"300", "balance":15}}
+            # {"origin": {"id":"100", "balance":0}, "destination": {"id":"300", "balance":15}}
 
             try:
                 data_origin = {}
@@ -112,3 +120,13 @@ class EventSerializer(serializers.ModelSerializer):
             except:
                 pass
         return new_data
+
+
+class ResetSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ('')
+        model = Event
+
+    def to_representation(self, data):
+        data = super(ResetSerializer, self).to_representation(data)
+        return data

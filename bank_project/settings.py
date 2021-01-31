@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # terceiros
+    'django_filters',
     'rest_framework',
     # local
     'api',
@@ -123,3 +124,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 SECURE_SSL_REDIRECT = False
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+}
