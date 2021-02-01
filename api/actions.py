@@ -2,8 +2,8 @@ from api.models import Event, Balance
 
 
 def get_account_exist(account_id):
-    """ 
-    Function that receives an id of account
+    """
+    Function that receives an id of an account
     and returns false in case doesn't exist
     and the pk if exists
     """
@@ -35,9 +35,9 @@ def update_balance(id, new_balance):
 
 def do_transaction(transaction, account_id1, amount, account_id2=''):
     """
-    This function receveis 3 mandatory parameters(transaction, account_id1,
+    This function receives 3 mandatory parameters(transaction, account_id1,
     amount) and one optional(account_id2) in case of tranfer transactions.
-    It's goingo to use the functions above, checking if account exists, 
+    It's going to use the functions above, checking if account exists,
     updating balance, creating destination accounts.
     Only will return False if the origin account doesn't exists.
     Otherwise will follow the code returning to views.py and then
@@ -55,7 +55,7 @@ def do_transaction(transaction, account_id1, amount, account_id2=''):
         elif transaction == 'withdraw':
             # if the account exists and the transaction is a withdraw
             # the variable new_balance will receives the old balance
-            # less the amount of withdraw            
+            # less the amount of withdraw
             new_balance = float(account_exist.balance) - \
                 float(amount)
             update_balance(account_exist.account_id, new_balance)
@@ -85,3 +85,42 @@ def do_transaction(transaction, account_id1, amount, account_id2=''):
         # it's going to return false, because it's no possible to make a withdraw or transfer
         # if the origin account doesn't exist
         return False
+
+
+def new_representation(transaction, account_id1, new_data, type_account, account_id2=''):
+    """
+    This function creates the correct representation of the data, that it's requested 
+    in ipkiss tester, after a transaction is made.
+    """
+    # deletes the unnecessary data, that won't be displayed
+    del new_data['type']
+    del new_data['destination']
+    del new_data['origin']
+    del new_data['amount']
+    if transaction in ['deposit', 'withdraw']:
+        account_exist = get_account_exist(account_id1)
+        if account_exist:
+            new_balance = account_exist.balance
+            # this dictionary will be displayed after doing a transaction
+            # of deposit or withdraw
+            new_data[type_account] = {"id": account_id1,
+                                      "balance": new_balance}
+    elif transaction == 'transfer':
+        account_origin_exist = get_account_exist(account_id1)
+        if account_origin_exist:
+            account_dest_exist = get_account_exist(account_id2)
+            new_balance_origin = account_origin_exist.balance
+            new_balance_destination = account_dest_exist.balance
+
+            data_origin = {}
+            data_destination = {}
+            data_origin['origin'] = account_origin_exist.account_id
+            data_origin['balance'] = new_balance_origin
+            data_destination['destination'] = account_dest_exist.account_id
+            data_destination['balance'] = new_balance_destination
+            # this both dictionaries will be displayed after doing a transaction
+            # of transfer
+            new_data['origin'] = {"id": data_origin["origin"],
+                                  "balance": data_origin["balance"]}
+            new_data['destination'] = {"id": data_destination["destination"],
+                                       "balance": data_destination["balance"]}

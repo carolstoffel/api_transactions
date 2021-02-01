@@ -25,11 +25,15 @@ class EventViewSet(viewsets.ModelViewSet):
             validate = do_transaction(
                 transaction='withdraw', account_id1=request.data['origin'], amount=request.data['amount'])
             if validate is False:
+                # if the function do_transaction returns False, it's because the origin account
+                # doesn't exists
                 return Response(0, status=status.HTTP_404_NOT_FOUND)
         elif request.data['type'] == 'transfer':
             validate = do_transaction(
                 transaction='transfer', account_id1=request.data['origin'], amount=request.data['amount'], account_id2=request.data['destination'])
             if validate is False:
+                # if the function do_transaction returns False, it's because the origin account
+                # doesn't exists
                 return Response(0, status=status.HTTP_404_NOT_FOUND)
         return super(EventViewSet, self).create(request, *args, **kwargs)
 
@@ -72,7 +76,7 @@ class ResetViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         # attached to POST
         # the variable all_balance will get all the objects that are saved
-        # in Balance model and will delete all. The same will happen with 
+        # in Balance model and will delete all. The same will happen with
         # Event objects
         all_balance = Balance.objects.all()
         [b.delete() for b in all_balance]
