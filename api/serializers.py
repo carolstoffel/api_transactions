@@ -55,7 +55,7 @@ class EventSerializer(serializers.ModelSerializer):
             try:
                 ob = Balance.objects.get(
                     account_id=data['origin'])
-                new_balance = ob.balance 
+                new_balance = ob.balance
                 print('NEW_BALANCE', new_balance)
             except:
                 print('sem obje')
@@ -78,6 +78,8 @@ class EventSerializer(serializers.ModelSerializer):
             except:
                 pass
         elif data['type'] == 'transfer':
+            print(data['origin'], 'origem')
+            print(data['destination'], 'destination')
             try:
                 ob_origin = Balance.objects.get(
                     account_id=data['origin'])
@@ -99,6 +101,7 @@ class EventSerializer(serializers.ModelSerializer):
             try:
                 data_origin = {}
                 data_destination = {}
+                print('teste1')
                 ob_origin = Balance.objects.get(
                     account_id=data['origin'])
                 print(ob_origin, 'ob_origin')
@@ -109,7 +112,7 @@ class EventSerializer(serializers.ModelSerializer):
                     account_id=data['destination'])
                 data_destination['balance'] = ob_destination.balance
                 data_destination['destination'] = ob_destination.account_id
-                print(data_destination)
+                print(data_destination, 'DATA DESTINATION')
             except:
                 pass
             try:

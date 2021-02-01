@@ -6,6 +6,7 @@ import django_filters.rest_framework
 from api.serializers import EventSerializer, BalanceSerializer, ResetSerializer
 from api.models import Event, Balance
 from django.http import HttpResponse
+from api.actions import get_account_exist, do_transaction
 
 
 class EventViewSet(viewsets.ModelViewSet):
@@ -15,72 +16,22 @@ class EventViewSet(viewsets.ModelViewSet):
         queryset = Event.objects.all()
         return queryset
 
-    def list(self, request, *args, **kwargs):
-        # atrelado ao GET
-        return super(EventViewSet, self).list(request, *args, **kwargs)
-        # return Response({'teste': 123})
-
     def create(self, request, *args, **kwargs):
-        # atrelado ao POST
+        # attached to POST
         if request.data['type'] == 'deposit':
-            try:
-                account_exist = Balance.objects.get(
-                    account_id=request.data['destination'])
-                print('existe', account_exist)
-                new_balance = float(account_exist.balance) + \
-                    float(request.data['amount'])
-                Balance.objects.filter(pk=account_exist.account_id).update(
-                    balance=new_balance)
-            except:
-                print('nao existe, cadastrando')
-                print(request.data['destination'])
-                create_account = Balance(
-                    account_id=request.data['destination'], balance=request.data['amount'])
-                create_account.save()
+            do_transaction(
+                transaction='deposit', account_id1=request.data['destination'], amount=request.data['amount'])
         elif request.data['type'] == 'withdraw':
-            try:
-                account_exist = Balance.objects.get(
-                    account_id=request.data['origin'])
-                new_balance = float(account_exist.balance) - \
-                    float(request.data['amount'])
-                Balance.objects.filter(pk=account_exist.account_id).update(
-                    balance=new_balance)
-            except:
+            validate = do_transaction(
+                transaction='withdraw', account_id1=request.data['origin'], amount=request.data['amount'])
+            if validate is False:
                 return Response(0, status=status.HTTP_404_NOT_FOUND)
         elif request.data['type'] == 'transfer':
-            try:
-                account_origin_exist = Balance.objects.get(
-                    account_id=request.data['origin'])
-            except:
+            validate = do_transaction(
+                transaction='transfer', account_id1=request.data['origin'], amount=request.data['amount'], account_id2=request.data['destination'])
+            if validate is False:
                 return Response(0, status=status.HTTP_404_NOT_FOUND)
-            new_balance_origin = float(
-                account_origin_exist.balance) - float(request.data['amount'])
-            Balance.objects.filter(pk=account_origin_exist.account_id).update(
-                balance=new_balance_origin)
-            try:
-                account_destination_exist = Balance.objects.get(
-                    account_id=request.data['destination'])
-                new_balance_destination = float(
-                    account_destination_exist.balance) + float(request.data['amount'])
-                Balance.objects.filter(pk=account_destination_exist.account_id).update(
-                    balance=new_destination_origin)
-            except:
-                create_account = Balance(
-                    account_id=request.data['destination'], balance=request.data['amount'])
-                create_account.save()
         return super(EventViewSet, self).create(request, *args, **kwargs)
-
-    def destroy(self, request, *args, **kwargs):
-        # atrelado ao GET, porém ex: pontosturisticos/1/
-        return super(EventViewSet, self).destroy(request, *args, **kwargs)
-
-    def update(self, request, *args, **kwargs):
-        # atrelado ao PUT
-        return super(EventViewSet, self).update(request, *args, **kwargs)
-
-    def partial_update(self, request, *args, **kwargs):
-        # atrelado ao PATCH
-        return super(EventViewSet, self).partial_update(request, *args, **kwargs)
 
 
 class BalanceViewSet(viewsets.ModelViewSet):
@@ -94,17 +45,22 @@ class BalanceViewSet(viewsets.ModelViewSet):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        # atrelado ao GET
-        # <rest_framework.request.Request: GET '/balance?account_id=100'> request
-        if request.method == 'GET':
-            info = request.query_params #<QueryDict: {'account_id': ['1230']}>
+        # attached to  GET
+        # if the request method is GET and there is something writting in url
+        if request.method == 'GET' and bool(request.query_params):
+            info = request.query_params
             try:
+                # in case the info written in url is account_id passing a value,
+                # is going to catch the balance for the account id and return it
                 account_data = Balance.objects.get(
                     account_id=info['account_id'])
                 return Response(account_data.balance, status=status.HTTP_200_OK)
             except:
+                # if wasn't possible to catch the value due to the info in url isn't
+                # "account_id" or the account_id doesn't exist, it will return 404
                 return HttpResponse(0, status=404)
         return super(BalanceViewSet, self).list(request, *args, **kwargs)
+
 
 class ResetViewSet(viewsets.ModelViewSet):
     serializer_class = ResetSerializer
@@ -114,7 +70,10 @@ class ResetViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        # atrelado ao POST
+        # attached to POST
+        # the variable all_balance will get all the objects that are saved
+        # in Balance model and will delete all. The same will happen with 
+        # Event objects
         all_balance = Balance.objects.all()
         [b.delete() for b in all_balance]
 
