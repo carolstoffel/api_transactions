@@ -59,7 +59,7 @@ def do_transaction(transaction, account_id1, amount, account_id2=''):
             new_balance = float(account_exist.balance) - \
                 float(amount)
             update_balance(account_exist.account_id, new_balance)
-        if transaction == 'transfer':
+        elif transaction == 'transfer':
             # if the origin account exists and the transaction is a transfer
             # the variable new_balance_origin will receives the old balance
             # of origin account subtract the amount
